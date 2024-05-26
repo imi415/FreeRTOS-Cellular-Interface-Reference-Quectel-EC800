@@ -32,13 +32,13 @@
 #include "cellular_config_defaults.h"
 #include "cellular_common.h"
 #include "cellular_common_portable.h"
-#include "cellular_bg96.h"
+#include "cellular_ec800.h"
 
 /*-----------------------------------------------------------*/
 
 #define ENBABLE_MODULE_UE_RETRY_COUNT      ( 3U )
 #define ENBABLE_MODULE_UE_RETRY_TIMEOUT    ( 5000U )
-#define BG96_NWSCANSEQ_CMD_MAX_SIZE        ( 29U ) /* The length of AT+QCFG="nwscanseq",020301,1\0. */
+#define EC800_NWSCANSEQ_CMD_MAX_SIZE       ( 29U ) /* The length of AT+QCFG="nwscanseq",020301,1\0. */
 
 /*-----------------------------------------------------------*/
 
@@ -93,37 +93,6 @@ static CellularError_t sendAtCommandWithRetryTimeout( CellularContext_t * pConte
 
 /*-----------------------------------------------------------*/
 
-static bool appendRatList( char * pRatList,
-                           CellularRat_t cellularRat )
-{
-    bool retValue = true;
-
-    /* Configure RAT Searching Sequence to default radio access technology. */
-    switch( cellularRat )
-    {
-        case CELLULAR_RAT_CATM1:
-            strcat( pRatList, "02" );
-            break;
-
-        case CELLULAR_RAT_NBIOT:
-            strcat( pRatList, "03" );
-            break;
-
-        case CELLULAR_RAT_GSM:
-            strcat( pRatList, "01" );
-            break;
-
-        default:
-            /* Configure RAT Searching Sequence to automatic. */
-            retValue = false;
-            break;
-    }
-
-    return retValue;
-}
-
-/*-----------------------------------------------------------*/
-
 CellularError_t Cellular_ModuleInit( const CellularContext_t * pContext,
                                      void ** ppModuleContext )
 {
@@ -166,15 +135,15 @@ CellularError_t Cellular_ModuleInit( const CellularContext_t * pContext,
             }
         }
 
-        #if ( CELLULAR_BG96_SUPPPORT_DIRECT_PUSH_SOCKET == 1 )
+        #if ( CELLULAR_EC800_SUPPPORT_DIRECT_PUSH_SOCKET == 1 )
         {
             /* Register the URC data callback. */
             if( cellularStatus == CELLULAR_SUCCESS )
             {
-                cellularStatus = _Cellular_RegisterInputBufferCallback( pContext, Cellular_BG96InputBufferCallback, pContext );
+                cellularStatus = _Cellular_RegisterInputBufferCallback( pContext, Cellular_EC800InputBufferCallback, pContext );
             }
         }
-        #endif /* CELLULAR_BG96_SUPPPORT_DIRECT_PUSH_SOCKET. */
+        #endif /* CELLULAR_EC800_SUPPPORT_DIRECT_PUSH_SOCKET. */
     }
 
     return cellularStatus;
@@ -225,8 +194,6 @@ CellularError_t Cellular_ModuleEnableUE( CellularContext_t * pContext )
         NULL,
         0
     };
-    char ratSelectCmd[ BG96_NWSCANSEQ_CMD_MAX_SIZE ] = "AT+QCFG=\"nwscanseq\",";
-    bool retAppendRat = true;
 
     if( pContext != NULL )
     {
@@ -253,52 +220,11 @@ CellularError_t Cellular_ModuleEnableUE( CellularContext_t * pContext )
         if( cellularStatus == CELLULAR_SUCCESS )
         {
             /* Setting URC output port. */
-            #if defined( CELLULAR_BG96_URC_PORT_USBAT ) || defined( BG96_URC_PORT_USBAT )
+            #if defined( CELLULAR_EC800_URC_PORT_USBAT ) || defined( EC800_URC_PORT_USBAT )
                 atReqGetNoResult.pAtCmd = "AT+QURCCFG=\"urcport\",\"usbat\"";
             #else
                 atReqGetNoResult.pAtCmd = "AT+QURCCFG=\"urcport\",\"uart1\"";
             #endif
-            cellularStatus = sendAtCommandWithRetryTimeout( pContext, &atReqGetNoResult );
-        }
-
-        if( cellularStatus == CELLULAR_SUCCESS )
-        {
-            /* Configure Band configuration to all bands. */
-            atReqGetNoResult.pAtCmd = "AT+QCFG=\"band\",f,400a0e189f,a0e189f";
-            cellularStatus = sendAtCommandWithRetryTimeout( pContext, &atReqGetNoResult );
-        }
-
-        if( cellularStatus == CELLULAR_SUCCESS )
-        {
-            /* Configure RAT(s) to be Searched to Automatic. */
-            atReqGetNoResult.pAtCmd = "AT+QCFG=\"nwscanmode\",0,1";
-            cellularStatus = sendAtCommandWithRetryTimeout( pContext, &atReqGetNoResult );
-        }
-
-        if( cellularStatus == CELLULAR_SUCCESS )
-        {
-            /* Configure Network Category to be Searched under LTE RAT to LTE Cat M1 and Cat NB1. */
-            atReqGetNoResult.pAtCmd = "AT+QCFG=\"iotopmode\",2,1";
-            cellularStatus = sendAtCommandWithRetryTimeout( pContext, &atReqGetNoResult );
-        }
-
-        if( cellularStatus == CELLULAR_SUCCESS )
-        {
-            retAppendRat = appendRatList( ratSelectCmd, CELLULAR_CONFIG_DEFAULT_RAT );
-            configASSERT( retAppendRat == true );
-
-            #ifdef CELLULAR_CONFIG_DEFAULT_RAT_2
-                retAppendRat = appendRatList( ratSelectCmd, CELLULAR_CONFIG_DEFAULT_RAT_2 );
-                configASSERT( retAppendRat == true );
-            #endif
-
-            #ifdef CELLULAR_CONFIG_DEFAULT_RAT_3
-                retAppendRat = appendRatList( ratSelectCmd, CELLULAR_CONFIG_DEFAULT_RAT_3 );
-                configASSERT( retAppendRat == true );
-            #endif
-
-            strcat( ratSelectCmd, ",1" ); /* Take effect immediately. */
-            atReqGetNoResult.pAtCmd = ratSelectCmd;
             cellularStatus = sendAtCommandWithRetryTimeout( pContext, &atReqGetNoResult );
         }
 

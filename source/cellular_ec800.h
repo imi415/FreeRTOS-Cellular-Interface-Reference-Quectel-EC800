@@ -23,8 +23,8 @@
  * https://github.com/FreeRTOS
  */
 
-#ifndef __CELLULAR_BG96_H__
-#define __CELLULAR_BG96_H__
+#ifndef __CELLULAR_EC800_H__
+#define __CELLULAR_EC800_H__
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
@@ -49,13 +49,13 @@
 #define DATA_SEND_TIMEOUT_MS                             ( 50000UL )
 #define DATA_READ_TIMEOUT_MS                             ( 50000UL )
 
-#ifndef CELLULAR_BG96_SUPPPORT_DIRECT_PUSH_SOCKET
-    #define CELLULAR_BG96_SUPPPORT_DIRECT_PUSH_SOCKET    0
+#ifndef CELLULAR_EC800_SUPPPORT_DIRECT_PUSH_SOCKET
+    #define CELLULAR_EC800_SUPPPORT_DIRECT_PUSH_SOCKET    0
 #endif
 
-#ifndef CELLULAR_BG96_DIRECT_PUSH_SOCKET_BUFFER_SIZE
-    #define CELLULAR_BG96_DIRECT_PUSH_SOCKET_BUFFER_SIZE    ( 2048UL )
-#endif /* CELLULAR_BG96_DIRECT_PUSH_SOCKET_BUFFER_SIZE. */
+#ifndef CELLULAR_EC800_DIRECT_PUSH_SOCKET_BUFFER_SIZE
+    #define CELLULAR_EC800_DIRECT_PUSH_SOCKET_BUFFER_SIZE    ( 2048UL )
+#endif /* CELLULAR_EC800_DIRECT_PUSH_SOCKET_BUFFER_SIZE. */
 
 /*-----------------------------------------------------------*/
 
@@ -89,10 +89,10 @@ typedef struct cellularModuleContext
     uint8_t dnsIndex;          /* DNS query current index. */
     char * pDnsUsrData;        /* DNS user data to store the result. */
 
-    #if ( CELLULAR_BG96_SUPPPORT_DIRECT_PUSH_SOCKET == 1 )
-        uint8_t pSocketBuffer[ CELLULAR_NUM_SOCKET_MAX ][ CELLULAR_BG96_DIRECT_PUSH_SOCKET_BUFFER_SIZE ];
+    #if ( CELLULAR_EC800_SUPPPORT_DIRECT_PUSH_SOCKET == 1 )
+        uint8_t pSocketBuffer[ CELLULAR_NUM_SOCKET_MAX ][ CELLULAR_EC800_DIRECT_PUSH_SOCKET_BUFFER_SIZE ];
         uint32_t pSocketDataSize[ CELLULAR_NUM_SOCKET_MAX ];
-    #endif /* CELLULAR_BG96_SUPPPORT_DIRECT_PUSH_SOCKET. */
+    #endif /* CELLULAR_EC800_SUPPPORT_DIRECT_PUSH_SOCKET. */
 
     CellularDnsResultEventCallback_t dnsEventCallback;
 } cellularModuleContext_t;
@@ -102,7 +102,7 @@ typedef struct cellularModuleContext
 CellularPktStatus_t _Cellular_ParseSimstat( char * pInputStr,
                                             CellularSimCardState_t * pSimState );
 
-CellularPktStatus_t Cellular_BG96InputBufferCallback( void * pInputBufferCallbackContext,
+CellularPktStatus_t Cellular_EC800InputBufferCallback( void * pInputBufferCallbackContext,
                                                       char * pBuffer,
                                                       uint32_t bufferLength,
                                                       uint32_t * pBufferLengthHandled );
@@ -129,4 +129,4 @@ extern uint32_t CellularUrcTokenWoPrefixTableSize;
 #endif
 /* *INDENT-ON* */
 
-#endif /* ifndef __CELLULAR_BG96_H__ */
+#endif /* ifndef __CELLULAR_EC800_H__ */
