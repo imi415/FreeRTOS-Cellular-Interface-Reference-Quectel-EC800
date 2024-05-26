@@ -47,7 +47,7 @@ static CellularError_t sendAtCommandWithRetryTimeout( CellularContext_t * pConte
 
 /*-----------------------------------------------------------*/
 
-static cellularModuleContext_t cellularBg96Context = { 0 };
+static cellularModuleContext_t cellularEc800Context = { 0 };
 
 const char * CellularSrcTokenErrorTable[] =
 { "ERROR", "BUSY", "NO CARRIER", "NO ANSWER", "NO DIALTONE", "ABORTED", "+CMS ERROR", "+CME ERROR", "SEND FAIL" };
@@ -110,10 +110,10 @@ CellularError_t Cellular_ModuleInit( const CellularContext_t * pContext,
     else
     {
         /* Initialize the module context. */
-        ( void ) memset( &cellularBg96Context, 0, sizeof( cellularModuleContext_t ) );
+        ( void ) memset( &cellularEc800Context, 0, sizeof( cellularModuleContext_t ) );
 
         /* Create the mutex for DNS. */
-        status = PlatformMutex_Create( &cellularBg96Context.contextMutex, false );
+        status = PlatformMutex_Create( &cellularEc800Context.contextMutex, false );
 
         if( status == false )
         {
@@ -122,16 +122,16 @@ CellularError_t Cellular_ModuleInit( const CellularContext_t * pContext,
         else
         {
             /* Create the queue for DNS. */
-            cellularBg96Context.pktDnsQueue = xQueueCreate( 1, sizeof( cellularDnsQueryResult_t ) );
+            cellularEc800Context.pktDnsQueue = xQueueCreate( 1, sizeof( cellularDnsQueryResult_t ) );
 
-            if( cellularBg96Context.pktDnsQueue == NULL )
+            if( cellularEc800Context.pktDnsQueue == NULL )
             {
-                PlatformMutex_Destroy( &cellularBg96Context.contextMutex );
+                PlatformMutex_Destroy( &cellularEc800Context.contextMutex );
                 cellularStatus = CELLULAR_NO_MEMORY;
             }
             else
             {
-                *ppModuleContext = ( void * ) &cellularBg96Context;
+                *ppModuleContext = ( void * ) &cellularEc800Context;
             }
         }
 
@@ -162,10 +162,10 @@ CellularError_t Cellular_ModuleCleanUp( const CellularContext_t * pContext )
     else
     {
         /* Delete DNS queue. */
-        vQueueDelete( cellularBg96Context.pktDnsQueue );
+        vQueueDelete( cellularEc800Context.pktDnsQueue );
 
         /* Delete the mutex for DNS. */
-        PlatformMutex_Destroy( &cellularBg96Context.contextMutex );
+        PlatformMutex_Destroy( &cellularEc800Context.contextMutex );
     }
 
     return cellularStatus;

@@ -50,8 +50,8 @@
 #define SIGNAL_QUALITY_POS_LTE_RSRP                ( 3U )
 #define SIGNAL_QUALITY_POS_LTE_SINR                ( 4U )
 #define SIGNAL_QUALITY_POS_LTE_RSRQ                ( 5U )
-#define SIGNAL_QUALITY_SINR_MIN_VALUE              ( -20 )
-#define SIGNAL_QUALITY_SINR_DIVISIBILITY_FACTOR    ( 5 )
+#define SIGNAL_QUALITY_SINR_MIN_VALUE              ( -23 )
+#define SIGNAL_QUALITY_SINR_DIVISIBILITY_FACTOR    ( 2 )
 
 #define COPS_POS_MODE                              ( 1U )
 #define COPS_POS_FORMAT                            ( 2U )
@@ -122,8 +122,8 @@ typedef enum qcsqServiceMode
 {
     QCSQ_SYSMODE_NOSERVICE,
     QCSQ_SYSMODE_GSM,
-    QCSQ_SYSMODE_CAT_M1,
-    QCSQ_SYSMODE_CAT_NB1,
+    QCSQ_SYSMODE_WCDMA,
+    QCSQ_SYSMODE_LTE,
     QCSQ_SYSMODE_INVALID
 } qcsqServiceMode_t;
 
@@ -246,13 +246,13 @@ static qcsqServiceMode_t _parseQcsqServiceMode( char * pSysmode )
     {
         eQcsqSysmode = QCSQ_SYSMODE_GSM;
     }
-    else if( strcmp( pSysmode, "CAT-M1" ) == 0 )
+    else if ( strcmp( pSysmode, "WCDMA" ) == 0 )
     {
-        eQcsqSysmode = QCSQ_SYSMODE_CAT_M1;
+        eQcsqSysmode = QCSQ_SYSMODE_WCDMA;
     }
-    else if( strcmp( pSysmode, "CAT-NB1" ) == 0 )
+    else if ( strcmp( pSysmode, "LTE" ) == 0 )
     {
-        eQcsqSysmode = QCSQ_SYSMODE_CAT_NB1;
+        eQcsqSysmode = QCSQ_SYSMODE_LTE;
     }
     else
     {
@@ -311,7 +311,7 @@ static bool _parseSignalQuality( char * pQcsqPayload,
         }
         else
         {
-            /* Parse value1( gsm_rssi or lte_rssi ) for GSM, CAT-M1 and CAT-NB1. */
+            /* Parse value1( gsm_rssi or lte_rssi or wcdma_rssi ) */
             if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS )
             {
                 atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
@@ -333,8 +333,7 @@ static bool _parseSignalQuality( char * pQcsqPayload,
         }
     }
 
-    /* Parse value2( lte_rsrp ), value3( lte_sinr ) and value4( lte_rsrq ) fields
-     * for CAT-M1 and CAT-NB1. */
+    /* Parse value2( wcdma_rscp or lte_rsrp ), value3( wcdma_ecio or lte_sinr ) fields for WCDMA and LTE. */
     if( parseStatus == true )
     {
         if( ( eQcsqSysmode == QCSQ_SYSMODE_NOSERVICE ) || ( eQcsqSysmode == QCSQ_SYSMODE_GSM ) )
@@ -369,15 +368,14 @@ static bool _parseSignalQuality( char * pQcsqPayload,
                 atCoreStatus = Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken );
             }
 
-            /* Parse the lte_sinr value. */
+            /* Parse the lte_sinr or wcdma_ecio value. */
             if( atCoreStatus == CELLULAR_AT_SUCCESS )
             {
                 atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
 
                 if( atCoreStatus == CELLULAR_AT_SUCCESS )
                 {
-                    /* SINR is reported as an integer value ranging from 0 to 250 representing 1/5 of a dB.
-                     * Value 0 correspond to -20 dBm and 250 corresponds to +30 dBm. */
+                    /* SINR calculation: Y = X/2 - 23.5, Y: SINR, X: reported value */
                     pSignalInfo->sinr = ( int16_t ) ( SIGNAL_QUALITY_SINR_MIN_VALUE + ( ( tempValue ) / ( SIGNAL_QUALITY_SINR_DIVISIBILITY_FACTOR ) ) );
                 }
                 else
@@ -386,6 +384,17 @@ static bool _parseSignalQuality( char * pQcsqPayload,
                 }
             }
 
+            if( atCoreStatus != CELLULAR_AT_SUCCESS )
+            {
+                parseStatus = false;
+            }
+        }
+    }
+
+    if ( parseStatus == true )
+    {
+        if( eQcsqSysmode == QCSQ_SYSMODE_LTE )
+        {
             /* Get the token for value 4. */
             if( atCoreStatus == CELLULAR_AT_SUCCESS )
             {
